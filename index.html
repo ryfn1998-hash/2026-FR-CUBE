@@ -3,218 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FR CUBE | SHADOW SERVER</title>
-    <!-- 強制載入庫，若載入失敗會跳出警告 -->
+    <title>Neon Runner: Shadow Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root { --neon: #00ff88; --neon-alt: #bc00ff; --bg: #050505; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Arial', sans-serif; color: white; }
+        :root { --neon: #8A2BE2; --neon-alt: #00ffff; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
         
-        /* 1. 高級載入動畫 - 確保使用者知道系統正在跑 */
-        #boot-loader { position: fixed; inset: 0; z-index: 10000; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { width: 50px; height: 50px; border: 3px solid #222; border-top: 3px solid var(--neon); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* 2. 遊戲 HUD */
-        #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 100; display: none; padding: 25px; }
-        .score-box { font-size: 32px; font-weight: 900; text-shadow: 0 0 15px var(--neon); }
-        .id-badge { font-size: 10px; color: var(--neon-alt); letter-spacing: 2px; background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 4px; }
-
-        /* 3. 50格高級商城 - 網格佈局 */
-        #shop-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px); z-index: 2000; display: none; padding: 40px; pointer-events: auto; }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; height: 70vh; overflow-y: auto; padding: 20px; border: 1px solid #222; }
-        .item-card { background: #111; border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; transition: 0.2s; cursor: pointer; }
-        .item-card:hover { border-color: var(--neon); transform: scale(1.05); }
-        .item-card.active { border-color: var(--neon-alt); box-shadow: 0 0 15px var(--neon-alt); }
+        /* UI 層級 */
+        .overlay { position: absolute; inset: 0; z-index: 8000; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); transition: 0.5s; }
+        .panel { padding: 30px; text-align: center; border-radius: 15px; border: 1px solid var(--neon); background: rgba(10,10,10,0.8); }
         
-        .btn-shop { position: absolute; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: var(--neon); color: #000; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: auto; box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+        /* 商城/暫停選單 */
+        #shop-menu { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.9); display: none; padding: 40px; }
+        .skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; height: 60vh; overflow-y: auto; padding: 15px; border: 1px solid #333; }
+        .skin-card { aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: 0.2s; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        .skin-card:hover { border-color: var(--neon); }
+        .skin-card.active { border-color: white; box-shadow: 0 0 15px white; }
+
+        /* 控制按鈕 */
+        .btn-pause { position: absolute; top: 20px; right: 20px; width: 45px; height: 45px; background: rgba(255,255,255,0.1); border: 1px solid var(--neon); color: white; border-radius: 50%; z-index: 1000; cursor: pointer; display: none; }
+        .score-ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 28px; font-weight: 900; color: var(--neon); text-shadow: 0 0 10px var(--neon); z-index: 1000; }
     </style>
 </head>
 <body>
 
-    <!-- 載入層 -->
-    <div id="boot-loader">
-        <div class="spinner"></div>
-        <p id="boot-text" style="margin-top:20px; font-size:12px; color:var(--neon);">LINKING SHADOW SERVER...</p>
+    <!-- 側邊視角起始畫面 -->
+    <div id="start-screen" class="overlay" onclick="handleStart()">
+        <h1 style="letter-spacing:10px; text-shadow: 0 0 20px var(--neon);">NEON RUNNER</h1>
+        <p style="color: var(--neon-alt); font-size: 14px; animation: blink 1.5s infinite;">TAP TO SYNC</p>
     </div>
 
-    <!-- 遊戲 HUD -->
-    <div id="ui-layer">
-        <div class="id-badge" id="dev-id">IDENTIFYING...</div>
-        <div class="score-box" id="cur-score">00000</div>
-        <div style="position:absolute; top:25px; right:25px; text-align:right;">
-            <div style="color:#ffd700; font-size:22px; font-weight:bold;">$ <span id="cur-gold">0</span></div>
+    <!-- 暫停/商城選單 -->
+    <div id="shop-menu">
+        <h2 style="text-align:center; color:var(--neon-alt);">SYSTEM PAUSED / SKINS</h2>
+        <div class="skin-grid" id="skin-list"></div>
+        <button onclick="resumeGame()" style="width:100%; margin-top:20px; padding:15px; background:var(--neon); border:none; color:white; font-weight:bold; border-radius:8px;">RESUME MISSION</button>
+    </div>
+
+    <!-- 死亡畫面 -->
+    <div id="death-screen" class="overlay" style="display:none;">
+        <div class="panel">
+            <h2 style="color:#ff0055;">LINK BROKEN</h2>
+            <p id="final-score" style="font-size:24px;"></p>
+            <button onclick="resetGame()" style="padding:10px 30px; background:var(--neon); border:none; color:white; border-radius:5px;">REBOOT</button>
         </div>
-        <div class="btn-shop" onclick="openShop()">🛒</div>
     </div>
 
-    <!-- 商城層 -->
-    <div id="shop-modal">
-        <h2 style="text-align:center; letter-spacing:5px; color:var(--neon-alt);">NEON ARCHIVE</h2>
-        <div class="grid-container" id="skin-grid"></div>
-        <button onclick="closeShop()" style="width:100%; margin-top:20px; padding:15px; background:var(--neon); border:none; font-weight:bold; border-radius:8px;">BACK TO GAME</button>
-    </div>
+    <div class="score-ui" id="ui-score">0</div>
+    <button class="btn-pause" id="pause-btn" onclick="pauseGame()">||</button>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script>
+        let scene, camera, renderer, player, animID;
+        let isPlaying = false, isPaused = false, isTransitioning = false;
+        let score = 0, speed = 0.6, lane = 0, lanes = [-2.2, 0, 2.2];
+        let obstacles = [];
 
-        // Firebase 配置 (確認與你的專案後台一致)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDFsYaVluzHsQc3dxcTNieu514UdU-mj4A",
-            authDomain: "fr-cube.firebaseapp.com",
-            projectId: "fr-cube",
-            storageBucket: "fr-cube.firebasestorage.app",
-            messagingSenderId: "872650518894",
-            appId: "1:872650518894:web:5de26c9c9fcfa1b611517f"
-        };
-
-        let db, user = { gold: 0, skins: ['#00ff88'], current: '#00ff88' };
-        let score = 0, coins = 0, active = false;
-        let sc, cam, rend, player, obs = [], goldObjs = [];
-        let lane = 1, lanes = [-2.5, 0, 2.5], spd = 0.6;
-
-        // 50格商品生成器
-        const SKINS = Array.from({length: 50}, (_, i) => ({
-            color: `hsl(${(i * 137) % 360}, 80%, 60%)`,
-            price: i * 150
-        }));
-
-        async function init() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                
-                let id = localStorage.getItem('FR_ID') || 'FR-'+Math.random().toString(36).substr(2,6).toUpperCase();
-                localStorage.setItem('FR_ID', id);
-
-                const snap = await getDoc(doc(db, "ShadowDevices", id));
-                if(snap.exists()) {
-                    user = snap.data();
-                } else {
-                    await setDoc(doc(db, "ShadowDevices", id), { ...user, deviceID: id });
-                }
-                start(id);
-            } catch (e) {
-                console.error(e);
-                start("OFFLINE_MODE"); // 失敗也強制進入遊戲，避免白屏
-            }
-        }
-
-        function start(id) {
-            document.getElementById('boot-loader').style.display = 'none';
-            document.getElementById('ui-layer').style.display = 'block';
-            document.getElementById('dev-id').innerText = "DEVICE: " + id;
-            updateUI();
-            buildWorld();
-            renderShop();
-        }
-
-        function buildWorld() {
-            sc = new THREE.Scene();
-            cam = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            rend = new THREE.WebGLRenderer({ antialias: true });
-            rend.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(rend.domElement);
-
-            player = new THREE.Mesh(
-                new THREE.BoxGeometry(1, 1, 1),
-                new THREE.MeshStandardMaterial({ color: user.current, emissive: user.current, emissiveIntensity: 0.8 })
-            );
-            player.position.y = 0.5;
-            sc.add(player);
-
-            sc.add(new THREE.GridHelper(200, 50, 0x222222, 0x111111));
-            sc.add(new THREE.AmbientLight(0xffffff, 0.5), new THREE.PointLight(0xffffff, 1));
-            cam.position.set(0, 5, 8); cam.lookAt(0, 0, -2);
-
-            // 同時支援電腦與手機控制
-            const handleInput = (x) => {
-                lane = x < window.innerWidth/2 ? Math.max(0, lane-1) : Math.min(2, lane+1);
-            };
-            window.addEventListener('mousedown', e => handleInput(e.clientX));
-            window.addEventListener('touchstart', e => handleInput(e.touches[0].clientX));
-
-            active = true;
-            tick();
-        }
-
-        function tick() {
-            if(!active) return;
-            requestAnimationFrame(tick);
-            spd += 0.0001;
-            player.position.x = THREE.MathUtils.lerp(player.position.x, lanes[lane], 0.2);
-
-            if(Math.random() < 0.04) {
-                let isG = Math.random() < 0.2;
-                let m = new THREE.Mesh(
-                    isG ? new THREE.SphereGeometry(0.4) : new THREE.BoxGeometry(1.2, 1.2, 1.2),
-                    new THREE.MeshStandardMaterial({ color: isG ? 0xffd700 : 0xbc00ff })
-                );
-                m.position.set(lanes[Math.floor(Math.random()*3)], 0.5, -80);
-                m.isG = isG;
-                sc.add(m);
-                isG ? goldObjs.push(m) : obs.push(m);
-            }
-
-            [...obs, ...goldObjs].forEach(obj => {
-                obj.position.z += spd;
-                if(player.position.distanceTo(obj.position) < 1.1) {
-                    if(obj.isG) {
-                        sc.remove(obj); goldObjs.splice(goldObjs.indexOf(obj),1);
-                        coins += 50; updateUI();
-                    } else { die(); }
-                }
-                if(obj.position.z > 10) {
-                    sc.remove(obj);
-                    obj.isG ? goldObjs.splice(goldObjs.indexOf(obj),1) : (obs.splice(obs.indexOf(obj),1), score+=10, updateUI());
-                }
-            });
-            rend.render(sc, cam);
-        }
-
-        async function die() {
-            active = false;
-            await updateDoc(doc(db, "ShadowDevices", localStorage.getItem('FR_ID')), { gold: increment(coins) });
-            location.reload();
-        }
-
-        function renderShop() {
-            const grid = document.getElementById('skin-grid');
-            grid.innerHTML = "";
-            SKINS.forEach(s => {
-                let owned = user.skins.includes(s.color);
-                let el = document.createElement('div');
-                el.className = `item-card ${user.current === s.color ? 'active' : ''}`;
-                el.innerHTML = `<div style="background:${s.color}; height:30px; border-radius:4px; margin-bottom:10px;"></div>
-                                <div style="font-size:10px;">${owned ? 'OWNED' : s.price+'$'}</div>`;
-                el.onclick = () => selectSkin(s);
-                grid.appendChild(el);
-            });
-        }
-
-        async function selectSkin(s) {
-            if(user.skins.includes(s.color)) {
-                user.current = s.color;
-                player.material.color.set(s.color);
-                await updateDoc(doc(db, "ShadowDevices", localStorage.getItem('FR_ID')), { current: s.color });
-            } else if(user.gold + coins >= s.price) {
-                user.gold -= (s.price - coins); coins = 0;
-                user.skins.push(s.color);
-                await updateDoc(doc(db, "ShadowDevices", localStorage.getItem('FR_ID')), { gold: user.gold, skins: user.skins });
-            }
-            renderShop(); updateUI();
-        }
-
-        function updateUI() {
-            document.getElementById('cur-score').innerText = score.toString().padStart(5, '0');
-            document.getElementById('cur-gold').innerText = user.gold + coins;
-        }
-
-        window.openShop = () => { document.getElementById('shop-modal').style.display='block'; active=false; };
-        window.closeShop = () => { document.getElementById('shop-modal').style.display='none'; active=true; tick(); };
+        // 皮膚資料 (50種)
+        const SKINS = [
+            { type: 'img', url: 'https://img.freepik.com/free-vector/abstract-neon-lights-background_23-2148332990.jpg', name: 'CYBER-IMG' },
+            ...Array.from({length: 49}, (_, i) => ({
+                type: 'color',
+                val: `hsl(${(i * 137) % 360}, 70%, 50%)`,
+                name: `NEON-${i+1}`
+            }))
+        ];
+        let currentSkin = SKINS[1].val;
 
         init();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x000000, 10, 60);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // 初始：側面視角
+            camera.position.set(12, 6, 10);
+            camera.lookAt(0, 0, -5);
+
+            // 玩家
+            const geo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const mat = new THREE.MeshStandardMaterial({ color: currentSkin, emissive: currentSkin, emissiveIntensity: 0.5 });
+            player = new THREE.Mesh(geo, mat);
+            player.position.y = 0.5;
+            scene.add(player);
+
+            // 環境與燈光
+            scene.add(new THREE.GridHelper(200, 40, 0x8A2BE2, 0x111111));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+            const pLight = new THREE.PointLight(0x8A2BE2, 1, 50);
+            pLight.position.set(0, 5, 5);
+            scene.add(pLight);
+
+            // 控制
+            const move = (dir) => { if(!isPlaying || isPaused) return; lane = Math.max(-1, Math.min(1, lane + dir)); };
+            window.addEventListener('keydown', e => {
+                if(e.key === "ArrowLeft") move(-1); if(e.key === "ArrowRight") move(1);
+            });
+            renderer.domElement.addEventListener('touchstart', e => {
+                move(e.touches[0].clientX < window.innerWidth/2 ? -1 : 1);
+            });
+
+            renderShop();
+            loop();
+        }
+
+        // 側視圖轉正中央的動畫
+        function handleStart() {
+            if(isTransitioning) return;
+            isTransitioning = true;
+            document.getElementById('start-screen').style.opacity = '0';
+            
+            const targetPos = { x: 0, y: 4, z: 7 };
+            const duration = 1200;
+            const startPos = { ...camera.position };
+            const startTime = performance.now();
+
+            function step(now) {
+                const p = (now - startTime) / duration;
+                if(p < 1) {
+                    camera.position.x = startPos.x + (targetPos.x - startPos.x) * p;
+                    camera.position.y = startPos.y + (targetPos.y - startPos.y) * p;
+                    camera.position.z = startPos.z + (targetPos.z - startPos.z) * p;
+                    camera.lookAt(0, 0, -2);
+                    requestAnimationFrame(step);
+                } else {
+                    camera.position.set(0, 4, 7);
+                    document.getElementById('start-screen').style.display = 'none';
+                    document.getElementById('pause-btn').style.display = 'block';
+                    isPlaying = true;
+                    isTransitioning = false;
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        function loop() {
+            animID = requestAnimationFrame(loop);
+            if(!isPlaying || isPaused) {
+                renderer.render(scene, camera);
+                return;
+            }
+
+            speed += 0.0001;
+            player.position.x = THREE.MathUtils.lerp(player.position.x, lanes[lane + 1], 0.2);
+
+            if(Math.random() < 0.04) spawn();
+
+            obstacles.forEach((o, i) => {
+                o.position.z += speed;
+                if(player.position.distanceTo(o.position) < 0.9) endGame();
+                if(o.position.z > 10) { scene.remove(o); obstacles.splice(i, 1); score++; updateUI(); }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function spawn() {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1, 1.2), new THREE.MeshStandardMaterial({ color: 0x00ffff }));
+            m.position.set(lanes[Math.floor(Math.random()*3)], 0.5, -60);
+            scene.add(m);
+            obstacles.push(m);
+        }
+
+        // 商城與皮膚切換
+        function renderShop() {
+            const list = document.getElementById('skin-list');
+            SKINS.forEach((s, i) => {
+                const card = document.createElement('div');
+                card.className = "skin-card";
+                if(s.type === 'color') card.style.background = s.val;
+                else card.style.backgroundImage = `url(${s.url})`;
+                card.onclick = () => setSkin(s);
+                list.appendChild(card);
+            });
+        }
+
+        function setSkin(s) {
+            if(s.type === 'color') {
+                player.material = new THREE.MeshStandardMaterial({ color: s.val, emissive: s.val, emissiveIntensity: 0.5 });
+            } else {
+                const loader = new THREE.TextureLoader();
+                const tex = loader.load(s.url);
+                player.material = new THREE.MeshBasicMaterial({ map: tex });
+            }
+            document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('active'));
+            resumeGame();
+        }
+
+        function pauseGame() { isPaused = true; document.getElementById('shop-menu').style.display = 'block'; }
+        function resumeGame() { isPaused = false; document.getElementById('shop-menu').style.display = 'none'; }
+        function updateUI() { document.getElementById('ui-score').innerText = score; }
+        function endGame() { isPlaying = false; document.getElementById('death-screen').style.display = 'flex'; document.getElementById('final-score').innerText = `SCORE: ${score}`; }
+        function resetGame() { location.reload(); }
     </script>
 </body>
 </html>
