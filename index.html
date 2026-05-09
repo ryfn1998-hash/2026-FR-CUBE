@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>量子霓虹：極速進化</title>
+    <title>FR量子方塊</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root { --neon: #8A2BE2; --neon-alt: #00ffff; }
@@ -28,22 +28,22 @@
 <body>
 
     <div id="start-screen" class="overlay" onclick="handleStart()">
-        <h1 style="letter-spacing:10px; color: var(--neon-alt); text-align:center;">量子霓虹<br><span style="font-size:16px; letter-spacing:2px; color:white;">極速進化版本</span></h1>
-        <p style="animation: blink 1.5s infinite; margin-top:20px;">點擊螢幕開始任務</p>
+        <h1 style="letter-spacing:10px; color: var(--neon-alt); text-align:center;">量子方塊<br><span style="font-size:16px; letter-spacing:2px; color:white;">極速進化版本</span></h1>
+        <p style="animation: blink 1.5s infinite; margin-top:20px;">點擊螢幕開始</p>
     </div>
 
     <div id="shop-menu">
         <h2 style="text-align:center; color:var(--neon-alt);">皮膚自定義系統</h2>
         <div class="skin-section">
-            <label>🖼️ 上傳貼圖</label>
+            <label>上傳貼圖</label>
             <input type="file" id="img-upload" accept="image/*" onchange="uploadImage(this)">
         </div>
         <div class="skin-section">
-            <label>🎨 自定義顏色</label>
+            <label>自定義顏色</label>
             <input type="color" id="color-picker" value="#8A2BE2" onchange="setCustomColor(this.value)">
         </div>
         <div class="skin-section">
-            <label>✨ 幻彩漸層</label>
+            <label>幻彩漸層</label>
             <div class="skin-grid" id="grad-list"></div>
         </div>
         <button class="primary" onclick="resumeGame()">套用並回到遊戲</button>
