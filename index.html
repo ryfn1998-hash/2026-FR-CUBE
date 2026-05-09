@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>2026 FR CUBE - Cloud Edition</title>
+    <style>
+        body { margin: 0; background: #050505; color: #fff; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .auth-panel { padding: 30px; border: 1px solid #00ff88; background: rgba(0,0,0,0.8); border-radius: 10px; text-align: center; }
+        input { display: block; width: 200px; margin: 10px auto; padding: 10px; background: #111; border: 1px solid #00ff88; color: #fff; }
+        button { padding: 10px 20px; background: #00ff88; border: none; cursor: pointer; font-weight: bold; }
+        #game-info { display: none; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- 登入介面 -->
+    <div id="auth-screen" class="auth-panel">
+        <h2 style="color:#00ff88;">2026 FR CUBE</h2>
+        <input type="email" id="email" placeholder="電子信箱">
+        <input type="password" id="password" placeholder="密碼">
+        <button onclick="handleLogin()">同步連線</button>
+        <p style="font-size: 12px; color: #888;">首次輸入將自動建立帳號</p>
+    </div>
+
+    <!-- 遊戲資訊顯示 (登入後顯示) -->
+    <div id="game-info">
+        <h1>歡迎回來, <span id="user-display">Agent</span></h1>
+        <p>金幣: <span id="gold-val">0</span> | 鑰匙: <span id="key-val">0</span></p>
+        <button onclick="addGoldTest()" style="background: #ff0055;">測試：獲得 100 金幣</button>
+    </div>
+
+    <!-- Firebase 模組載入 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 你的身分證
+        const firebaseConfig = {
+            apiKey: "AIzaSyDFsYaVluzHsQc3dxcTNieu514UdU-mj4A",
+            authDomain: "fr-cube.firebaseapp.com",
+            projectId: "fr-cube",
+            storageBucket: "fr-cube.firebasestorage.app",
+            messagingSenderId: "872650518894",
+            appId: "1:872650518894:web:5de26c9c9fcfa1b611517f",
+            measurementId: "G-0J5D3TSMBC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // 登入邏輯：嘗試登入，失敗則自動註冊
+        window.handleLogin = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (err) {
+                if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+                    // 這裡簡化邏輯：如果沒帳號就幫他建一個
+                    const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    await setDoc(doc(db, "users", res.user.uid), {
+                        gold: 0,
+                        keys: 20,
+                        highScore: 0
+                    });
+                } else {
+                    alert("錯誤: " + err.message);
+                }
+            }
+        };
+
+        // 監聽玩家狀態
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('game-info').style.display = 'block';
+                
+                // 抓取雲端存檔
+                const snap = await getDoc(doc(db, "users", user.uid));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('gold-val').innerText = data.gold;
+                    document.getElementById('key-val').innerText = data.keys;
+                }
+            }
+        });
+
+        // 測試功能：同步金幣到雲端
+        window.addGoldTest = async () => {
+            const user = auth.currentUser;
+            if (user) {
+                const userRef = doc(db, "users", user.uid);
+                await updateDoc(userRef, { gold: increment(100) });
+                
+                // 重新讀取顯示
+                const snap = await getDoc(userRef);
+                document.getElementById('gold-val').innerText = snap.data().gold;
+            }
+        };
+    </script>
+</body>
+</html>
