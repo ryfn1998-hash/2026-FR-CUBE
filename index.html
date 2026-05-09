@@ -3,63 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neon Runner: Ultimate Custom</title>
+    <title>Neon Runner: Shadow Force</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root { --neon: #8A2BE2; --neon-alt: #00ffff; }
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
         
-        /* UI 元件 */
-        .overlay { position: absolute; inset: 0; z-index: 8000; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-        .panel { padding: 30px; text-align: center; border-radius: 15px; border: 2px solid var(--neon); background: rgba(0,0,0,0.9); width: 80%; max-width: 400px; }
+        .overlay { position: absolute; inset: 0; z-index: 8000; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); }
+        .panel { padding: 30px; text-align: center; border-radius: 15px; border: 2px solid var(--neon); background: rgba(10,10,10,0.9); width: 85%; max-width: 400px; }
         
-        /* 暫停/商城選單 */
-        #shop-menu { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.95); display: none; padding: 20px; overflow-y: auto; }
-        .skin-section { margin-bottom: 25px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 10px; }
-        .skin-card { aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 2px solid #333; }
+        #shop-menu { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.95); display: none; padding: 25px; overflow-y: auto; }
+        .skin-section { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 8px; margin-top: 10px; }
+        .skin-card { aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 2px solid #444; }
         
-        /* 自定義工具欄 */
-        .custom-tool { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-        input[type="color"], input[type="file"] { width: 100%; height: 40px; background: #222; border: 1px solid var(--neon); cursor: pointer; }
-
-        .btn-pause { position: absolute; top: 20px; right: 20px; width: 45px; height: 45px; background: rgba(255,255,255,0.1); border: 2px solid var(--neon); color: white; border-radius: 50%; z-index: 1000; cursor: pointer; display: none; }
-        .score-ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 32px; font-weight: 900; color: var(--neon); text-shadow: 0 0 15px var(--neon); z-index: 1000; }
+        .btn-pause { position: absolute; top: 20px; right: 20px; width: 50px; height: 50px; background: rgba(138,43,226,0.3); border: 2px solid var(--neon); color: white; border-radius: 50%; z-index: 1000; cursor: pointer; display: none; font-size: 20px; }
+        .score-ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 32px; font-weight: 900; color: var(--neon); text-shadow: 0 0 15px var(--neon); z-index: 1000; pointer-events: none; }
+        
+        input[type="color"], input[type="file"] { width: 100%; height: 45px; background: #222; border: 1px solid var(--neon); border-radius: 5px; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="start-screen" class="overlay" onclick="handleStart()">
-        <h1 style="letter-spacing:8px; color: var(--neon-alt);">NEON RUNNER</h1>
-        <p style="animation: blink 1.5s infinite;">CLICK TO START MISSION</p>
+        <h1 style="letter-spacing:10px; color: var(--neon-alt);">NEON RUNNER</h1>
+        <p style="animation: blink 1.5s infinite;">TAP TO START</p>
     </div>
 
     <div id="shop-menu">
-        <h2 style="text-align:center; color:var(--neon-alt); margin-bottom:20px;">SKIN CUSTOMIZER</h2>
+        <h2 style="text-align:center; color:var(--neon-alt);">SKIN SYSTEM</h2>
         
         <div class="skin-section">
-            <label>1. 上傳角色圖片</label>
+            <label>🖼️ 自定義圖片</label>
             <input type="file" id="img-upload" accept="image/*" onchange="uploadImage(this)">
         </div>
 
         <div class="skin-section">
-            <label>2. 自定義單色</label>
-            <input type="color" id="color-picker" onchange="setCustomColor(this.value)">
+            <label>🎨 自定義單色</label>
+            <input type="color" id="color-picker" value="#8A2BE2" onchange="setCustomColor(this.value)">
         </div>
 
         <div class="skin-section">
-            <label>3. 預設高級漸層</label>
+            <label>✨ 高級漸層</label>
             <div class="skin-grid" id="grad-list"></div>
         </div>
 
-        <button onclick="resumeGame()" style="width:100%; padding:15px; background:var(--neon); border:none; color:white; font-weight:bold; border-radius:8px; cursor:pointer;">APPLY & RESUME</button>
+        <button onclick="resumeGame()" style="width:100%; padding:18px; background:var(--neon); border:none; color:white; font-weight:bold; border-radius:10px; cursor:pointer; font-size:18px;">APPLY & RESUME</button>
     </div>
 
     <div id="death-screen" class="overlay" style="display:none;">
         <div class="panel">
-            <h2 style="color:#ff0055;">CONNECTION LOST</h2>
-            <p id="final-score" style="font-size:28px;"></p>
-            <button onclick="location.reload()" style="padding:12px 40px; background:var(--neon); border:none; color:white; border-radius:30px; font-weight:bold;">REBOOT SYSTEM</button>
+            <h2 style="color:#ff4444;">LINK BROKEN</h2>
+            <p id="final-score" style="font-size:30px;"></p>
+            <button onclick="location.reload()" style="padding:15px 40px; background:var(--neon); border:none; color:white; border-radius:30px; font-weight:bold; cursor:pointer;">REBOOT</button>
         </div>
     </div>
 
@@ -70,66 +66,61 @@
         let scene, camera, renderer, player, animID;
         let isPlaying = false, isPaused = false, isTransitioning = false;
         let score = 0, speed = 0.6, lane = 0, lanes = [-2.2, 0, 2.2];
-        let obstacles = [], sideLines = [];
+        let obstacles = [], particles = [], sideLines = [];
 
-        // 漸層清單
         const GRADIENTS = [
-            'linear-gradient(45deg, #ff00cc, #3333ff)',
-            'linear-gradient(45deg, #00f2fe, #4facfe)',
-            'linear-gradient(45deg, #f093fb, #f5576c)',
-            'linear-gradient(45deg, #5eeff9, #4568dc)',
-            'linear-gradient(45deg, #8A2BE2, #00ffff)'
+            ['#ff00cc', '#3333ff'], ['#00f2fe', '#4facfe'], ['#f093fb', '#f5576c'], ['#5eeff9', '#4568dc'], ['#8A2BE2', '#00ffff']
         ];
 
         init();
 
         function init() {
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x000000, 15, 70);
+            scene.fog = new THREE.Fog(0x000000, 10, 60);
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // 初始：側面視角
             camera.position.set(15, 8, 12);
             camera.lookAt(0, 0, -10);
 
-            // 1. 地地板網格加強 (解決平面不清楚)
-            const floorGeo = new THREE.PlaneGeometry(20, 1000);
-            const floorMat = new THREE.MeshPhongMaterial({ color: 0x000000, emissive: 0x111111 });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
+            // 地板與網格
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 1000), new THREE.MeshPhongMaterial({ color: 0x000000 }));
+            floor.rotation.x = -Math.PI/2;
             scene.add(floor);
-
             const grid = new THREE.GridHelper(1000, 100, 0x8A2BE2, 0x222222);
-            grid.position.y = 0.05;
+            grid.position.y = 0.02;
             scene.add(grid);
 
-            // 2. 復刻：軌道左右邊界光條
+            // 邊界線
             for(let x of [-4.5, 4.5]) {
-                const lineGeo = new THREE.BoxGeometry(0.2, 0.2, 1000);
-                const lineMat = new THREE.MeshBasicMaterial({ color: 0x8A2BE2 });
-                const line = new THREE.Mesh(lineGeo, lineMat);
+                const line = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 1000), new THREE.MeshBasicMaterial({ color: 0x8A2BE2 }));
                 line.position.set(x, 0.1, 0);
                 scene.add(line);
                 sideLines.push(line);
             }
 
             // 玩家
-            player = new THREE.Mesh(
-                new THREE.BoxGeometry(1, 1, 1),
-                new THREE.MeshStandardMaterial({ color: 0x8A2BE2, emissive: 0x8A2BE2, emissiveIntensity: 0.5 })
-            );
-            player.position.y = 0.5;
+            player = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshStandardMaterial({ color: 0x8A2BE2, emissive: 0x8A2BE2, emissiveIntensity: 0.5 }));
+            player.position.y = 0.45;
             scene.add(player);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            const sun = new THREE.DirectionalLight(0x00ffff, 0.8);
-            sun.position.set(5, 10, 5);
-            scene.add(sun);
-
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
             renderGradients();
+
+            // --- 核心觸控修復 ---
+            window.addEventListener('touchstart', e => {
+                if(!isPlaying || isPaused) return;
+                const tx = e.touches[0].clientX;
+                lane = tx < window.innerWidth / 2 ? Math.max(-1, lane - 1) : Math.min(1, lane + 1);
+            }, { passive: false });
+
+            window.addEventListener('keydown', e => {
+                if(e.key === "ArrowLeft" || e.key === "a") lane = Math.max(-1, lane - 1);
+                if(e.key === "ArrowRight" || e.key === "d") lane = Math.min(1, lane + 1);
+            });
+
             loop();
         }
 
@@ -137,17 +128,14 @@
             if(isTransitioning) return;
             isTransitioning = true;
             document.getElementById('start-screen').style.opacity = '0';
-            
-            const duration = 1500;
-            const startPos = { ...camera.position };
+            const duration = 1200;
+            const startP = { ...camera.position };
             const startTime = performance.now();
 
             function step(now) {
                 const p = Math.min((now - startTime) / duration, 1);
-                const t = 1 - Math.pow(1 - p, 3); // Out-cubic ease
-                camera.position.x = startPos.x + (0 - startPos.x) * t;
-                camera.position.y = startPos.y + (4.5 - startPos.y) * t;
-                camera.position.z = startPos.z + (8 - startPos.z) * t;
+                const t = 1 - Math.pow(1 - p, 3);
+                camera.position.set(startP.x + (0 - startP.x)*t, startP.y + (4.5 - startP.y)*t, startP.z + (8 - startP.z)*t);
                 camera.lookAt(0, 0, -2);
                 if(p < 1) requestAnimationFrame(step);
                 else {
@@ -164,7 +152,21 @@
             if(!isPlaying || isPaused) { renderer.render(scene, camera); return; }
 
             speed += 0.00015;
-            player.position.x = THREE.MathUtils.lerp(player.position.x, lanes[lane + 1], 0.25);
+            player.position.x = THREE.MathUtils.lerp(player.position.x, lanes[lane + 1], 0.2);
+
+            // 粒子尾影 (回歸)
+            if(Math.random() > 0.4) {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), player.material.clone());
+                p.position.set(player.position.x, player.position.y, player.position.z);
+                p.material.transparent = true;
+                scene.add(p);
+                particles.push(p);
+            }
+            particles.forEach((p, i) => {
+                p.position.z += speed * 0.5;
+                p.material.opacity -= 0.05;
+                if(p.material.opacity <= 0) { scene.remove(p); particles.splice(i, 1); }
+            });
 
             if(Math.random() < 0.05) spawn();
 
@@ -174,20 +176,18 @@
                 if(o.position.z > 10) { scene.remove(o); obstacles.splice(i, 1); score++; updateUI(); }
             });
 
-            // 邊線流動
             sideLines.forEach(l => l.position.z = (l.position.z + speed) % 50);
-
             renderer.render(scene, camera);
         }
 
         function spawn() {
-            const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.3 }));
-            m.position.set(lanes[Math.floor(Math.random()*3)], 0.6, -80);
-            scene.add(m);
-            obstacles.push(m);
+            const obs = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff }));
+            obs.position.set(lanes[Math.floor(Math.random()*3)], 0.6, -80);
+            scene.add(obs);
+            obstacles.push(obs);
         }
 
-        // --- 皮膚系統核心 ---
+        // --- 皮膚修復 ---
         function setCustomColor(color) {
             player.material = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 });
         }
@@ -206,21 +206,18 @@
 
         function renderGradients() {
             const list = document.getElementById('grad-list');
-            GRADIENTS.forEach(g => {
+            GRADIENTS.forEach(colors => {
                 const card = document.createElement('div');
                 card.className = "skin-card";
-                card.style.background = g;
+                card.style.background = `linear-gradient(45deg, ${colors[0]}, ${colors[1]})`;
                 card.onclick = () => {
-                    // 使用 Canvas 捕捉漸層色作為貼圖
                     const canvas = document.createElement('canvas');
-                    canvas.width = 256; canvas.height = 256;
+                    canvas.width = 128; canvas.height = 128;
                     const ctx = canvas.getContext('2d');
-                    const grad = ctx.createLinearGradient(0, 0, 256, 256);
-                    const colors = g.match(/#[a-fA-F0-9]{6}/g);
+                    const grad = ctx.createLinearGradient(0, 0, 128, 128);
                     grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
-                    ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
-                    const tex = new THREE.CanvasTexture(canvas);
-                    player.material = new THREE.MeshBasicMaterial({ map: tex });
+                    ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
+                    player.material = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas) });
                 };
                 list.appendChild(card);
             });
