@@ -3,48 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 FR CUBE | Device Linked Edition</title>
+    <title>2026 FR CUBE | Final Stable Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root { --neon: #00ff88; --neon-alt: #00e5ff; --glass: rgba(15, 15, 15, 0.95); }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', sans-serif; color: white; touch-action: none; }
         
         /* 載入畫面 */
-        #loading-screen { position: fixed; inset: 0; z-index: 9999; display: flex; justify-content: center; align-items: center; background: #000; transition: opacity 0.8s; }
-        .loader { width: 50px; height: 50px; border: 3px solid #333; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; }
+        #loading-screen { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; transition: opacity 0.5s; }
+        .loader { width: 40px; height: 40px; border: 3px solid #222; border-top-color: var(--neon); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* 遊戲 HUD */
-        #game-hud { position: absolute; inset: 0; pointer-events: none; padding: 25px; z-index: 100; opacity: 0; transition: opacity 1s; }
-        .hud-stat { font-size: 28px; font-weight: 900; letter-spacing: 1px; }
-        .hud-id { color: var(--neon-alt); font-size: 11px; opacity: 0.6; letter-spacing: 1px; }
+        #game-hud { position: absolute; inset: 0; pointer-events: none; padding: 25px; z-index: 100; display: none; }
+        .hud-stat { font-size: 28px; font-weight: 900; }
+        .hud-id { color: var(--neon-alt); font-size: 11px; opacity: 0.6; }
         .top-right { position: absolute; top: 25px; right: 25px; text-align: right; }
 
-        /* 商城介面 */
-        #shop-btn { position: absolute; bottom: 30px; right: 30px; width: 65px; height: 65px; border-radius: 50%; background: var(--neon-alt); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 500; font-size: 28px; pointer-events: auto; box-shadow: 0 0 20px rgba(0, 229, 255, 0.4); }
-        #shop-panel { position: fixed; right: 30px; bottom: 110px; width: 260px; padding: 20px; background: var(--glass); border: 1px solid var(--neon-alt); border-radius: 20px; display: none; z-index: 600; pointer-events: auto; }
-        .skin-item { display: flex; justify-content: space-between; padding: 12px; margin: 8px 0; background: rgba(255,255,255,0.05); border-radius: 10px; cursor: pointer; font-size: 14px; }
-        .skin-item:hover { background: rgba(255,255,255,0.1); }
+        /* 商城 */
+        #shop-btn { position: absolute; bottom: 30px; right: 30px; width: 60px; height: 60px; border-radius: 50%; background: var(--neon-alt); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 500; font-size: 26px; pointer-events: auto; }
+        #shop-panel { position: fixed; right: 30px; bottom: 100px; width: 250px; padding: 20px; background: var(--glass); border: 1px solid var(--neon-alt); border-radius: 15px; display: none; z-index: 600; pointer-events: auto; }
+        .skin-item { display: flex; justify-content: space-between; padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; }
 
-        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; border-radius: 30px; font-size: 14px; z-index: 10000; display: none; background: var(--neon); color: #000; font-weight: bold; }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 10000; display: none; background: var(--neon); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loading-screen"><div class="loader"></div></div>
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p style="margin-top:20px; color:#555; font-size:12px; letter-spacing:2px;">FR TECHNOLOGY SECURE LINKING...</p>
+    </div>
 
     <div id="game-hud">
-        <div class="hud-id" id="display-id">IDENTIFYING DEVICE...</div>
+        <div class="hud-id" id="display-id">LINKING...</div>
         <div class="hud-stat">SCORE: <span id="val-score">0</span></div>
         <div class="top-right">
-            <div style="color: #ffd700; font-size: 22px; font-weight: bold;">💰 <span id="val-gold">0</span></div>
-            <div style="color: #666; font-size: 12px; margin-top: 5px;">BEST: <span id="val-high">0</span></div>
+            <div style="color: #ffd700; font-size: 20px; font-weight: bold;">💰 <span id="val-gold">0</span></div>
+            <div style="color: #444; font-size: 11px;">HIGH: <span id="val-high">0</span></div>
         </div>
 
         <div id="shop-btn" onclick="toggleShop()">🛒</div>
         <div id="shop-panel">
-            <h3 style="color:var(--neon-alt); margin:0 0 15px; font-size: 18px;">SKIN STORE</h3>
+            <h3 style="color:var(--neon-alt); margin-top:0;">STORE</h3>
             <div id="skin-list"></div>
+            <button onclick="toggleShop()" style="width:100%; background:transparent; border:1px solid #444; color:#888; margin-top:10px; padding:5px; border-radius:5px;">CLOSE</button>
         </div>
     </div>
 
@@ -54,6 +57,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // FR 科技公司官方配置
         const firebaseConfig = {
             apiKey: "AIzaSyDFsYaVluzHsQc3dxcTNieu514UdU-mj4A",
             authDomain: "fr-cube.firebaseapp.com",
@@ -66,87 +70,59 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        let userProfile = null;
+        let userProfile = { gold: 0, highScore: 0, skins: ['classic'], currentSkin: 'classic' };
         let score = 0, sessionGold = 0, isGameActive = false;
         let scene, camera, renderer, player, obstacles = [], coins = [], clock;
-        let currentLane = 1, laneX = [-2.5, 0, 2.5], moveTarget = 0, speed = 0.6;
+        let currentLane = 1, laneX = [-2.5, 0, 2.5], moveTarget = 0, speed = 0.55;
 
         const SKINS = [
             { id: 'classic', name: '經典綠', color: 0x00ff88, price: 0 },
-            { id: 'cyan', name: '霓虹藍', color: 0x00e5ff, price: 800 },
-            { id: 'gold', name: '量子金', color: 0xffd700, price: 3000 }
+            { id: 'cyan', name: '霓虹藍', color: 0x00e5ff, price: 500 },
+            { id: 'gold', name: '閃耀金', color: 0xffd700, price: 1500 }
         ];
 
-        // --- 核心：自動裝置綁定系統 ---
+        // --- 強力自動驗證 (帶超時處理) ---
         async function autoAuth() {
             let dKey = localStorage.getItem('FR_DEVICE_TOKEN');
             
-            if (!dKey) {
-                // 新裝置：自動生成身分碼
-                dKey = 'FR-' + Math.random().toString(36).substring(2, 11).toUpperCase();
-                localStorage.setItem('FR_DEVICE_TOKEN', dKey);
-                
-                userProfile = { deviceID: dKey, gold: 0, highScore: 0, skins: ['classic'], currentSkin: 'classic' };
-                await setDoc(doc(db, "ShadowDevices", dKey), userProfile);
-                showMsg("新裝置綁定成功！");
-            } else {
-                // 舊裝置：從資料庫讀取
-                const snap = await getDoc(doc(db, "ShadowDevices", dKey));
-                if (snap.exists()) {
-                    userProfile = snap.data();
-                    showMsg("裝置識別成功，歡迎回來");
-                } else {
-                    localStorage.removeItem('FR_DEVICE_TOKEN');
-                    return autoAuth();
+            // 設定 5 秒超時，避免無限轉圈
+            const timeout = setTimeout(() => {
+                if (!userProfile.deviceID) {
+                    showMsg("連線較慢，啟動離線保護模式", true);
+                    launchGame("GUEST-MODE");
                 }
+            }, 5000);
+
+            try {
+                if (!dKey) {
+                    dKey = 'FR-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                    localStorage.setItem('FR_DEVICE_TOKEN', dKey);
+                    await setDoc(doc(db, "ShadowDevices", dKey), { ...userProfile, deviceID: dKey });
+                } else {
+                    const snap = await getDoc(doc(db, "ShadowDevices", dKey));
+                    if (snap.exists()) userProfile = snap.data();
+                }
+                clearTimeout(timeout);
+                launchGame(dKey);
+            } catch (e) {
+                console.error("Firebase Error:", e);
+                clearTimeout(timeout);
+                launchGame("OFFLINE-USER");
             }
-            
-            launchGame();
         }
 
-        function launchGame() {
+        function launchGame(id) {
+            userProfile.deviceID = id;
             document.getElementById('loading-screen').style.opacity = '0';
-            setTimeout(() => document.getElementById('loading-screen').remove(), 800);
-            document.getElementById('game-hud').style.opacity = '1';
-            document.getElementById('display-id').innerText = `DEVICE: ${userProfile.deviceID}`;
-            updateUI();
-            renderShop();
-            initEngine();
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('game-hud').style.display = 'block';
+                document.getElementById('display-id').innerText = `DEVICE: ${id}`;
+                updateUI(); renderShop(); initEngine();
+            }, 500);
         }
 
-        // --- 商城邏輯 ---
-        function renderShop() {
-            const list = document.getElementById('skin-list');
-            list.innerHTML = "";
-            SKINS.forEach(skin => {
-                const owned = userProfile.skins.includes(skin.id);
-                const item = document.createElement('div');
-                item.className = "skin-item";
-                item.innerHTML = `<span>${skin.name}</span><span>${owned ? '使用' : skin.price + '💰'}</span>`;
-                item.onclick = () => processSkin(skin);
-                list.appendChild(item);
-            });
-        }
-
-        async function processSkin(skin) {
-            const ref = doc(db, "ShadowDevices", userProfile.deviceID);
-            if (userProfile.skins.includes(skin.id)) {
-                await updateDoc(ref, { currentSkin: skin.id });
-                userProfile.currentSkin = skin.id;
-                player.material.color.setHex(skin.color);
-                showMsg(`已切換至 ${skin.name}`);
-            } else if (userProfile.gold >= skin.price) {
-                await updateDoc(ref, { gold: increment(-skin.price), skins: arrayUnion(skin.id), currentSkin: skin.id });
-                userProfile.gold -= skin.price;
-                userProfile.skins.push(skin.id);
-                userProfile.currentSkin = skin.id;
-                player.material.color.setHex(skin.color);
-                showMsg(`成功解鎖 ${skin.name}！`);
-            } else { showMsg("餘額不足", true); }
-            updateUI(); renderShop();
-        }
-
-        // --- 3D 核心 ---
+        // --- 遊戲邏輯 ---
         function initEngine() {
             scene = new THREE.Scene();
             scene.fog = new THREE.Fog(0x000000, 10, 80);
@@ -155,19 +131,18 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            const skin = SKINS.find(s => s.id === userProfile.currentSkin);
+            const skin = SKINS.find(s => s.id === userProfile.currentSkin) || SKINS[0];
             player = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: skin.color, emissive: skin.color, emissiveIntensity: 0.5 }));
             player.position.y = 0.5;
             scene.add(player);
 
-            const grid = new THREE.GridHelper(200, 40, 0x00ff88, 0x111111);
-            scene.add(grid, new THREE.AmbientLight(0xffffff, 0.6));
+            scene.add(new THREE.GridHelper(200, 40, 0x00ff88, 0x111111), new THREE.AmbientLight(0xffffff, 0.7));
             camera.position.set(0, 4, 7); camera.lookAt(0, 0, -2);
             clock = new THREE.Clock();
 
-            window.addEventListener('mousedown', (e) => { 
+            window.addEventListener('touchstart', (e) => {
                 if(!isGameActive) return;
-                currentLane = e.clientX < window.innerWidth/2 ? Math.max(0, currentLane-1) : Math.min(2, currentLane+1);
+                currentLane = e.touches[0].clientX < window.innerWidth/2 ? Math.max(0, currentLane-1) : Math.min(2, currentLane+1);
                 moveTarget = laneX[currentLane];
             });
 
@@ -178,43 +153,82 @@
         function animate() {
             if(!isGameActive) return;
             requestAnimationFrame(animate);
-            speed += 0.00015;
+            speed += 0.0001;
             player.position.x = THREE.MathUtils.lerp(player.position.x, moveTarget, 0.15);
 
-            if(Math.random() < 0.04) spawn();
+            if(Math.random() < 0.035) spawn();
 
-            [...obstacles].forEach((o, i) => {
-                o.position.z += speed;
-                if(player.position.distanceTo(o.position) < 1.1) gameOver();
-                if(o.position.z > 10) { scene.remove(o); obstacles.splice(i, 1); score += 10; updateUI(); }
-            });
-
-            [...coins].forEach((c, i) => {
-                c.position.z += speed;
-                if(player.position.distanceTo(c.position) < 1.0) { scene.remove(c); coins.splice(i, 1); sessionGold += 50; updateUI(); }
-                if(c.position.z > 10) { scene.remove(c); coins.splice(i, 1); }
+            [...obstacles, ...coins].forEach((obj, i) => {
+                obj.position.z += speed;
+                if(player.position.distanceTo(obj.position) < 1.1) {
+                    if(obj.isCoin) {
+                        scene.remove(obj); coins.splice(coins.indexOf(obj), 1);
+                        sessionGold += 20; updateUI();
+                    } else { gameOver(); }
+                }
+                if(obj.position.z > 10) {
+                    scene.remove(obj);
+                    obj.isCoin ? coins.splice(coins.indexOf(obj), 1) : obstacles.splice(obstacles.indexOf(obj), 1);
+                    if(!obj.isCoin) { score += 10; updateUI(); }
+                }
             });
             renderer.render(scene, camera);
         }
 
         function spawn() {
             const lane = laneX[Math.floor(Math.random()*3)];
-            const isCoin = Math.random() < 0.3;
-            const m = new THREE.Mesh(isCoin ? new THREE.SphereGeometry(0.4) : new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: isCoin ? 0xffd700 : 0xff4400, emissive: isCoin ? 0xffd700 : 0x000, emissiveIntensity: 0.3 }));
+            const isCoin = Math.random() < 0.2;
+            const m = new THREE.Mesh(
+                isCoin ? new THREE.SphereGeometry(0.4) : new THREE.BoxGeometry(1.1, 1.1, 1.1),
+                new THREE.MeshStandardMaterial({ color: isCoin ? 0xffd700 : 0xff3300 })
+            );
             m.position.set(lane, 0.6, -80);
+            m.isCoin = isCoin;
             scene.add(m);
             isCoin ? coins.push(m) : obstacles.push(m);
         }
 
         async function gameOver() {
             isGameActive = false;
-            showMsg("同步資料中...");
-            const ref = doc(db, "ShadowDevices", userProfile.deviceID);
-            await updateDoc(ref, { 
-                gold: increment(sessionGold),
-                highScore: Math.max(userProfile.highScore, score)
-            });
+            showMsg("GAME OVER | SAVING...");
+            try {
+                const ref = doc(db, "ShadowDevices", userProfile.deviceID);
+                await updateDoc(ref, { 
+                    gold: increment(sessionGold),
+                    highScore: Math.max(userProfile.highScore, score)
+                });
+            } catch(e) {}
             setTimeout(() => location.reload(), 1500);
+        }
+
+        // --- UI ---
+        function renderShop() {
+            const list = document.getElementById('skin-list');
+            list.innerHTML = "";
+            SKINS.forEach(skin => {
+                const owned = userProfile.skins.includes(skin.id);
+                const item = document.createElement('div');
+                item.className = "skin-item";
+                item.innerHTML = `<span>${skin.name}</span><span>${owned ? 'EQUIP' : skin.price+'💰'}</span>`;
+                item.onclick = () => buyOrEquip(skin);
+                list.appendChild(item);
+            });
+        }
+
+        async function buyOrEquip(skin) {
+            if (userProfile.skins.includes(skin.id)) {
+                userProfile.currentSkin = skin.id;
+                player.material.color.setHex(skin.color);
+                showMsg("SKIN EQUIPPED");
+            } else if (userProfile.gold + sessionGold >= skin.price) {
+                userProfile.gold -= skin.price;
+                userProfile.skins.push(skin.id);
+                showMsg("SKIN PURCHASED!");
+                // 同步至資料庫
+                const ref = doc(db, "ShadowDevices", userProfile.deviceID);
+                await updateDoc(ref, { gold: userProfile.gold, skins: arrayUnion(skin.id) });
+            } else { showMsg("NOT ENOUGH GOLD", true); }
+            renderShop();
         }
 
         function updateUI() {
@@ -225,21 +239,17 @@
 
         window.toggleShop = () => {
             const p = document.getElementById('shop-panel');
-            const open = p.style.display === 'block';
-            p.style.display = open ? 'none' : 'block';
-            isGameActive = !open;
+            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+            isGameActive = (p.style.display === 'none');
         };
 
         window.showMsg = (msg, isErr = false) => {
             const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.background = isErr ? "#ff4444" : "#00ff88";
-            t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
+            t.innerText = msg; t.style.background = isErr ? "#ff4444" : "#00ff88";
+            t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500);
         };
 
         window.onload = autoAuth;
-
     </script>
 </body>
 </html>
