@@ -8,35 +8,58 @@
     <style>
         :root { --neon: #8A2BE2; --neon-alt: #00ffff; }
         body { margin: 0; overflow: hidden; background: #000; font-family: 'Microsoft JhengHei', sans-serif; touch-action: none; color: white; }
+        
+        /* 介面樣式 */
         .overlay { position: absolute; inset: 0; z-index: 8000; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); transition: opacity 0.5s; }
         .panel { padding: 30px; text-align: center; border-radius: 15px; border: 2px solid var(--neon); background: rgba(10,10,10,0.9); width: 85%; max-width: 400px; }
+        
+        /* 皮膚選單 */
         #shop-menu { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.95); display: none; padding: 25px; overflow-y: auto; }
         .skin-section { margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
         .skin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 10px; margin-top: 10px; }
         .skin-card { aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 2px solid #444; transition: 0.2s; }
+        .skin-card:hover { border-color: var(--neon-alt); transform: scale(1.05); }
+        
+        /* 遊戲 UI */
         .btn-pause { position: absolute; top: 20px; right: 20px; width: 50px; height: 50px; background: rgba(138,43,226,0.3); border: 2px solid var(--neon); color: white; border-radius: 50%; z-index: 1000; cursor: pointer; display: none; font-size: 20px; }
         .score-ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 32px; font-weight: 900; color: var(--neon-alt); text-shadow: 0 0 15px var(--neon-alt); z-index: 1000; pointer-events: none; }
+        
         input[type="color"], input[type="file"] { width: 100%; height: 45px; background: #222; border: 1px solid var(--neon); border-radius: 5px; color: white; cursor: pointer; margin-top: 5px; }
         button.primary { width: 100%; padding: 18px; background: var(--neon); border: none; color: white; font-weight: bold; border-radius: 10px; cursor: pointer; font-size: 18px; margin-top: 10px; }
+        
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
 
     <div id="start-screen" class="overlay" onclick="handleStart()">
-        <h1 style="letter-spacing:10px; color: var(--neon-alt); text-align:center;">量子霓虹<br><span style="font-size:16px; letter-spacing:2px; color:white;">超長尾跡修正版</span></h1>
-        <p style="animation: blink 1.5s infinite; margin-top:20px;">點擊螢幕開始任務</p>
+        <h1 style="letter-spacing:10px; color: var(--neon-alt); text-align:center;">量子霓虹<br><span style="font-size:16px; letter-spacing:2px; color:white;">最終強化版</span></h1>
+        <p style="animation: blink 1.5s infinite; margin-top:20px;">點擊螢幕開始</p>
     </div>
 
     <div id="shop-menu">
-        <h2 style="text-align:center; color:var(--neon-alt);">皮膚系統</h2>
-        <div class="skin-section"><label>🖼️ 圖片貼圖</label><input type="file" accept="image/*" onchange="uploadImage(this)"></div>
-        <div class="skin-section"><label>🎨 自定義顏色</label><input type="color" value="#8A2BE2" onchange="setCustomColor(this.value)"></div>
-        <div class="skin-section"><label>✨ 幻彩漸層</label><div class="skin-grid" id="grad-list"></div></div>
-        <button class="primary" onclick="resumeGame()">返回遊戲</button>
+        <h2 style="text-align:center; color:var(--neon-alt);">皮膚自定義系統</h2>
+        <div class="skin-section">
+            <label>🖼️ 自定義貼圖</label>
+            <input type="file" accept="image/*" onchange="uploadImage(this)">
+        </div>
+        <div class="skin-section">
+            <label>🎨 選擇顏色</label>
+            <input type="color" value="#8A2BE2" onchange="setCustomColor(this.value)">
+        </div>
+        <div class="skin-section">
+            <label>✨ 幻彩漸層</label>
+            <div class="skin-grid" id="grad-list"></div>
+        </div>
+        <button class="primary" onclick="resumeGame()">確認套用</button>
     </div>
 
     <div id="death-screen" class="overlay" style="display:none;">
-        <div class="panel"><h2 style="color:#ff4444;">連線中斷</h2><p id="final-score" style="font-size:30px;"></p><button class="primary" onclick="location.reload()">重試</button></div>
+        <div class="panel">
+            <h2 style="color:#ff4444;">連線中斷</h2>
+            <p id="final-score" style="font-size:30px; margin: 20px 0;"></p>
+            <button class="primary" onclick="location.reload()">重新連線</button>
+        </div>
     </div>
 
     <div class="score-ui" id="ui-score">0</div>
@@ -49,25 +72,35 @@
         let lane = 0, lanes = [-2.2, 0, 2.2];
         let obstacles = [], particles = [], sideLines = [];
 
-        const GRADIENTS = [['#ff00cc', '#3333ff'], ['#00f2fe', '#4facfe'], ['#f093fb', '#f5576c'], ['#5eeff9', '#4568dc'], ['#8A2BE2', '#00ffff']];
+        const GRADIENTS = [
+            ['#ff00cc', '#3333ff'], ['#00f2fe', '#4facfe'], 
+            ['#f093fb', '#f5576c'], ['#5eeff9', '#4568dc'], ['#8A2BE2', '#00ffff']
+        ];
 
         init();
 
         function init() {
             scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x000000, 20, 100);
+            scene.fog = new THREE.Fog(0x000000, 15, 85);
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             document.body.appendChild(renderer.domElement);
 
             camera.position.set(15, 8, 12);
             camera.lookAt(0, 0, -10);
 
+            // 地面與網格
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 2000), new THREE.MeshPhongMaterial({ color: 0x000000 }));
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
             const grid = new THREE.GridHelper(1000, 80, 0x8A2BE2, 0x111111);
             grid.position.y = 0.02;
             scene.add(grid);
 
+            // 邊界裝飾線
             for(let x of [-4.5, 4.5]) {
                 const line = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 1000), new THREE.MeshBasicMaterial({ color: 0x8A2BE2 }));
                 line.position.set(x, 0.05, 0);
@@ -75,19 +108,30 @@
                 sideLines.push(line);
             }
 
-            player = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), new THREE.MeshStandardMaterial({ color: 0x8A2BE2, emissive: 0x8A2BE2, emissiveIntensity: 0.5 }));
+            // 玩家方塊
+            player = new THREE.Mesh(
+                new THREE.BoxGeometry(0.9, 0.9, 0.9), 
+                new THREE.MeshStandardMaterial({ color: 0x8A2BE2, emissive: 0x8A2BE2, emissiveIntensity: 0.5 })
+            );
             player.position.y = 0.45;
             scene.add(player);
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.6));
             renderGradients();
 
+            // 觸控邏輯：點擊切換軌道
             window.addEventListener('touchstart', e => {
                 if(!isPlaying || isPaused) return;
                 const tx = e.touches[0].clientX;
-                lane = tx < window.innerWidth / 2 ? Math.max(-1, lane - 1) : Math.min(1, lane + 1);
+                if(tx < window.innerWidth / 2) lane = Math.max(-1, lane - 1);
+                else lane = Math.min(1, lane + 1);
                 e.preventDefault();
             }, { passive: false });
+
+            window.addEventListener('keydown', e => {
+                if(e.key === "ArrowLeft") lane = Math.max(-1, lane - 1);
+                if(e.key === "ArrowRight") lane = Math.min(1, lane + 1);
+            });
 
             loop();
         }
@@ -96,14 +140,22 @@
             if(isTransitioning) return;
             isTransitioning = true;
             document.getElementById('start-screen').style.opacity = '0';
+            
+            const duration = 1200;
+            const startP = { ...camera.position };
             const startTime = performance.now();
+
             function step(now) {
-                const p = Math.min((now - startTime) / 1200, 1);
+                const p = Math.min((now - startTime) / duration, 1);
                 const t = 1 - Math.pow(1 - p, 3);
-                camera.position.set(15*(1-t), 8*(1-t)+4.5*t, 12*(1-t)+8*t);
+                camera.position.set(startP.x + (0 - startP.x) * t, startP.y + (4.5 - startP.y) * t, startP.z + (8 - startP.z) * t);
                 camera.lookAt(0, 0, -2);
                 if(p < 1) requestAnimationFrame(step);
-                else { document.getElementById('start-screen').style.display = 'none'; document.getElementById('pause-btn').style.display = 'block'; isPlaying = true; }
+                else {
+                    document.getElementById('start-screen').style.display = 'none';
+                    document.getElementById('pause-btn').style.display = 'block';
+                    isPlaying = true;
+                }
             }
             requestAnimationFrame(step);
         }
@@ -115,53 +167,82 @@
             currentSpeed = baseSpeed + (score * 0.005);
             player.position.x = THREE.MathUtils.lerp(player.position.x, lanes[lane + 1], 0.2);
 
-            // 【粒子優化】：延長尾跡長度
-            if(Math.random() > 0.3) {
-                const p = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.8), player.material.clone());
+            // 2D 貼地粒子生成
+            if(Math.random() > 0.4) {
+                const p = new THREE.Mesh(
+                    new THREE.PlaneGeometry(0.8, 0.8), 
+                    player.material.clone()
+                );
+                p.material.transparent = true;
+                p.material.opacity = 0.6;
                 p.rotation.x = -Math.PI / 2;
                 p.position.set(player.position.x, 0.06, player.position.z);
-                p.material.transparent = true;
-                p.material.opacity = 0.7;
                 scene.add(p);
                 particles.push(p);
             }
 
+            // 粒子動畫與消失
             particles.forEach((p, i) => {
-                p.position.z += currentSpeed * 0.15;
-                p.material.opacity -= 0.015; // 降低衰減速度 = 尾跡變長
-                p.scale.x *= 0.985; // 緩慢縮小
-                p.scale.y *= 0.985;
-                if(p.material.opacity <= 0) { scene.remove(p); particles.splice(i, 1); }
+                p.position.z += currentSpeed * 0.3;
+                p.material.opacity -= 0.04;
+                p.scale.x *= 0.95;
+                p.scale.y *= 0.95;
+                if(p.material.opacity <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
+                }
             });
 
-            if(Math.random() < 0.04 + (score * 0.0005)) spawn();
+            // 障礙物邏輯
+            if(Math.random() < 0.04 + (score * 0.0006)) spawn();
 
             obstacles.forEach((o, i) => {
                 o.position.z += currentSpeed;
                 if(player.position.distanceTo(o.position) < 0.9) endGame();
-                if(o.position.z > 10) { scene.remove(o); obstacles.splice(i, 1); score++; updateUI(); }
+                if(o.position.z > 10) {
+                    scene.remove(o);
+                    obstacles.splice(i, 1);
+                    score++;
+                    updateUI();
+                }
             });
 
             sideLines.forEach(l => l.position.z = (l.position.z + currentSpeed) % 50);
             renderer.render(scene, camera);
         }
 
-        // 【必留生路】：隨機二路障礙物
         function spawn() {
-            // 隨機生成 1 或 2 個，絕對不會是 3 個
-            const count = Math.random() > 0.7 ? 2 : 1; 
-            const availableLanes = [0, 1, 2].sort(() => Math.random() - 0.5);
+            // 防死局：隨機決定生成 1 或 2 個障礙物（永遠留一條生路）
+            const count = Math.random() > 0.8 ? 2 : 1;
+            const available = [0, 1, 2].sort(() => Math.random() - 0.5);
             
             for(let i = 0; i < count; i++) {
-                const obs = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.5 }));
-                obs.position.set(lanes[availableLanes[i]], 0.6, -100);
+                const obs = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.2, 1.2, 1.2), 
+                    new THREE.MeshStandardMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 0.5 })
+                );
+                obs.position.set(lanes[available[i]], 0.6, -100);
                 scene.add(obs);
                 obstacles.push(obs);
             }
         }
 
-        function setCustomColor(color) { player.material = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 }); }
-        function uploadImage(input) { if (input.files && input.files[0]) { const reader = new FileReader(); reader.onload = (e) => { player.material = new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load(e.target.result) }); }; reader.readAsDataURL(input.files[0]); } }
+        // 皮膚控制函數
+        function setCustomColor(color) {
+            player.material = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5 });
+        }
+
+        function uploadImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const tex = new THREE.TextureLoader().load(e.target.result);
+                    player.material = new THREE.MeshBasicMaterial({ map: tex });
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
         function renderGradients() {
             const list = document.getElementById('grad-list');
             GRADIENTS.forEach(colors => {
@@ -169,19 +250,32 @@
                 card.className = "skin-card";
                 card.style.background = `linear-gradient(45deg, ${colors[0]}, ${colors[1]})`;
                 card.onclick = () => {
-                    const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 128;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 128; canvas.height = 128;
                     const ctx = canvas.getContext('2d');
-                    const grad = ctx.createLinearGradient(0, 0, 128, 128); grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
+                    const grad = ctx.createLinearGradient(0, 0, 128, 128);
+                    grad.addColorStop(0, colors[0]); grad.addColorStop(1, colors[1]);
                     ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
                     player.material = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas) });
                 };
                 list.appendChild(card);
             });
         }
+
         function pauseGame() { isPaused = true; document.getElementById('shop-menu').style.display = 'block'; }
         function resumeGame() { isPaused = false; document.getElementById('shop-menu').style.display = 'none'; }
         function updateUI() { document.getElementById('ui-score').innerText = score; }
-        function endGame() { isPlaying = false; document.getElementById('death-screen').style.display = 'flex'; document.getElementById('final-score').innerText = `積分: ${score}`; }
+        function endGame() {
+            isPlaying = false;
+            document.getElementById('death-screen').style.display = 'flex';
+            document.getElementById('final-score').innerText = `最終積分: ${score}`;
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
