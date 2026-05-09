@@ -3,57 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 FR CUBE - ID System</title>
+    <title>2026 FR CUBE - Flagship Edition</title>
+    <!-- 引入 Three.js 核心與高級效果腳本 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <style>
-        :root { --neon: #00ff88; --bg: #050505; }
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; touch-action: none; color: white; }
-        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 8000; backdrop-filter: blur(10px); }
-        .panel { padding: 30px; background: rgba(15,15,15,0.95); border: 1px solid var(--neon); border-radius: 20px; text-align: center; width: 320px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; text-align: center; }
-        .btn { width: 100%; padding: 12px; background: var(--neon); border: none; color: #000; cursor: pointer; font-weight: bold; border-radius: 8px; margin-top: 10px; }
-        .game-ui { position: absolute; top: 25px; left: 25px; z-index: 100; color: var(--neon); font-weight: bold; }
+        :root {
+            --neon-main: #00ff88;
+            --neon-alt: #00e5ff;
+            --danger: #ff4444;
+            --glass: rgba(10, 10, 10, 0.9);
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background: #000;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            user-select: none; touch-action: none;
+        }
+
+        /* 介面玻璃擬態效果 */
+        .glass-panel {
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 驗證畫面 */
+        #auth-screen {
+            position: fixed; inset: 0; z-index: 9000;
+            display: flex; justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
+        }
+
+        .auth-container {
+            width: 340px; padding: 40px; text-align: center;
+            border-top: 4px solid var(--neon-main);
+        }
+
+        .auth-container h1 {
+            font-size: 28px; margin: 0 0 10px;
+            letter-spacing: 4px; color: var(--neon-main);
+            text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+
+        /* 輸入框美化 */
+        .input-group { margin: 15px 0; position: relative; }
+        input {
+            width: 100%; padding: 14px; background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333; color: #fff; border-radius: 10px;
+            font-size: 15px; transition: 0.3s; box-sizing: border-box;
+            text-align: center;
+        }
+        input:focus {
+            border-color: var(--neon-main);
+            background: rgba(255, 255, 255, 0.1);
+            outline: none; box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+        }
+
+        /* 按鈕系統 */
+        .btn-core {
+            width: 100%; padding: 15px; margin-top: 15px;
+            border: none; border-radius: 10px; cursor: pointer;
+            font-weight: 900; font-size: 16px; letter-spacing: 1px;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-primary { background: var(--neon-main); color: #000; }
+        .btn-primary:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .btn-outline {
+            background: transparent; border: 1px solid #444; color: #888;
+            margin-top: 10px;
+        }
+        .btn-outline:hover { border-color: var(--neon-alt); color: var(--neon-alt); }
+
+        /* 遊戲 UI */
+        .hud-top {
+            position: absolute; top: 30px; left: 30px; z-index: 100;
+            pointer-events: none;
+        }
+        .hud-id { color: var(--neon-alt); font-size: 12px; margin-bottom: 5px; opacity: 0.7; }
+        .hud-stat { font-size: 24px; font-weight: 900; color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        
+        .hud-right { position: absolute; top: 30px; right: 30px; z-index: 100; text-align: right; }
+        .coin-display { color: #ffd700; font-size: 20px; font-weight: bold; }
+
+        /* 商城介面 */
+        #shop-trigger {
+            position: absolute; bottom: 40px; right: 40px;
+            width: 65px; height: 65px; border-radius: 50%;
+            background: var(--neon-alt); display: flex;
+            justify-content: center; align-items: center;
+            cursor: pointer; z-index: 500; font-size: 28px;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        }
+        
+        #shop-window {
+            position: fixed; right: 40px; bottom: 120px;
+            width: 260px; padding: 20px; display: none; z-index: 600;
+        }
+        .shop-title { color: var(--neon-alt); margin: 0 0 15px; font-size: 18px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .skin-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; margin: 8px 0; background: rgba(255,255,255,0.03);
+            border-radius: 8px; cursor: pointer; transition: 0.2s;
+        }
+        .skin-card:hover { background: rgba(255,255,255,0.08); border-left: 3px solid var(--neon-alt); }
+        .skin-info { font-size: 14px; }
+        .skin-price { font-size: 12px; color: #ffd700; }
+
+        /* 提示訊息 */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            padding: 12px 25px; border-radius: 30px; color: #fff;
+            font-size: 14px; z-index: 10000; display: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
         .hidden { display: none !important; }
-        .status-msg { font-size: 12px; margin-top: 10px; min-height: 15px; color: #ff4444; }
     </style>
 </head>
 <body>
 
-    <!-- ID 驗證系統 -->
-    <div id="auth-screen" class="overlay">
-        <!-- 登入介面 -->
-        <div id="login-box" class="panel">
-            <h2 style="color:var(--neon);">2026 FR CUBE</h2>
-            <p style="font-size:12px; color:#666;">請輸入您的玩家 ID 登入</p>
-            <input type="text" id="login-id" placeholder="玩家 ID">
-            <input type="password" id="login-pass" placeholder="存取密碼">
-            <button class="btn" onclick="handleSignIn()">同步連線</button>
-            <button class="btn" style="background:transparent; border:1px solid #444; color:#aaa;" onclick="toggleAuth(true)">建立新 ID</button>
-            <div id="login-status" class="status-msg"></div>
+    <!-- 驗證層 (ID & Password) -->
+    <div id="auth-screen">
+        <!-- 登入面板 -->
+        <div id="login-box" class="glass-panel auth-container">
+            <h1>FR CUBE</h1>
+            <p style="color:#555; font-size:11px; margin-bottom:25px; letter-spacing:2px;">INTERNAL ACCESS ONLY</p>
+            <div class="input-group">
+                <input type="text" id="login-id" placeholder="玩家 ID (ID碼)">
+            </div>
+            <div class="input-group">
+                <input type="password" id="login-pass" placeholder="安全密鑰 (密碼)">
+            </div>
+            <button class="btn-core btn-primary" onclick="processLogin()">進入系統</button>
+            <button class="btn-core btn-outline" onclick="toggleAuthView(true)">註冊新玩家</button>
         </div>
 
-        <!-- 註冊介面 -->
-        <div id="reg-box" class="panel hidden">
-            <h2 style="color:#00ffff;">自定義玩家 ID</h2>
-            <p style="font-size:12px; color:#666;">註冊後 ID 無法更改</p>
-            <input type="text" id="reg-id" placeholder="設定玩家 ID (英文/數字)">
-            <input type="password" id="reg-pass" placeholder="設定密碼 (至少6位)">
-            <button class="btn" style="background:#00ffff" onclick="handleSignUp()">確認註冊</button>
-            <button class="btn" style="background:transparent; border:1px solid #444; color:#aaa;" onclick="toggleAuth(false)">返回登入</button>
-            <div id="reg-status" class="status-msg"></div>
+        <!-- 註冊面板 -->
+        <div id="reg-box" class="glass-panel auth-container hidden">
+            <h1>INITIALIZE</h1>
+            <p style="color:#555; font-size:11px; margin-bottom:25px; letter-spacing:2px;">CREATE NEW AGENT</p>
+            <div class="input-group">
+                <input type="text" id="reg-id" placeholder="設定唯一 ID">
+            </div>
+            <div class="input-group">
+                <input type="password" id="reg-pass" placeholder="設定安全密碼 (6位以上)">
+            </div>
+            <button class="btn-core" style="background:var(--neon-alt); color:#000;" onclick="processRegister()">完成初始化</button>
+            <button class="btn-core btn-outline" onclick="toggleAuthView(false)">返回登入</button>
         </div>
     </div>
 
-    <div class="game-ui">
-        <div>ID: <span id="display-id">---</span></div>
-        <div style="color:#00ffff">金幣: <span id="gold-val">0</span></div>
+    <!-- 遊戲 HUD -->
+    <div id="game-hud" class="hidden">
+        <div class="hud-top">
+            <div class="hud-id" id="display-id">ID: UNKNOWN</div>
+            <div class="hud-stat">SCORE: <span id="val-score">0</span></div>
+        </div>
+        <div class="hud-right">
+            <div class="coin-display">💰 <span id="val-gold">0</span></div>
+            <div style="color: #FFD700; font-size: 14px; margin-top:5px;">🔑 <span id="val-keys">0</span></div>
+        </div>
+
+        <div id="shop-trigger" onclick="toggleShop()">🛒</div>
+        <div id="shop-window" class="glass-panel">
+            <h3 class="shop-title">外殼商店</h3>
+            <div id="skin-list">
+                <!-- 皮膚由 JS 動態生成 -->
+            </div>
+            <p style="font-size:10px; color:#444; margin-top:15px; text-align:center;">點擊即可購買或切換皮膚</p>
+        </div>
     </div>
+
+    <div id="toast-msg" class="toast"></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- 核心配置 ---
         const firebaseConfig = {
             apiKey: "AIzaSyDFsYaVluzHsQc3dxcTNieu514UdU-mj4A",
             authDomain: "fr-cube.firebaseapp.com",
@@ -67,63 +199,309 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // 將 ID 轉換為 Firebase 可接受的 Email 格式
-        const formatID = (id) => `${id.trim().toLowerCase()}@fr.cube`;
+        // 遊戲狀態與參數
+        let userData = null;
+        let isGameRunning = false;
+        let score = 0, sessionGold = 0;
+        let scene, camera, renderer, player, obstacles = [], coins = [], clock;
+        let lanePos = [-2.5, 0, 2.5], currentLane = 1;
+        let moveTargetX = 0, speed = 0.5, difficultyTimer = 0;
 
-        window.toggleAuth = (isReg) => {
-            document.getElementById('login-box').classList.toggle('hidden', isReg);
-            document.getElementById('reg-box').classList.toggle('hidden', !isReg);
+        const SKINS = [
+            { id: 'classic', name: '經典綠', color: 0x00ff88, price: 0 },
+            { id: 'neon_blue', name: '霓虹藍', color: 0x00e5ff, price: 500 },
+            { id: 'cyber_pink', name: '電幻粉', color: 0xff00ff, price: 1200 },
+            { id: 'gold_master', name: '量子金', color: 0xffd700, price: 3000 },
+            { id: 'void_red', name: '虛空紅', color: 0xff4444, price: 5000 }
+        ];
+
+        // --- UI & 驗證邏輯 ---
+
+        window.showToast = (msg, color = "#00e5ff") => {
+            const t = document.getElementById('toast-msg');
+            t.innerText = msg;
+            t.style.background = color;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
         };
 
-        // ID 登入
-        window.handleSignIn = async () => {
+        window.toggleAuthView = (showReg) => {
+            document.getElementById('login-box').classList.toggle('hidden', showReg);
+            document.getElementById('reg-box').classList.toggle('hidden', !showReg);
+        };
+
+        const getEmailFromID = (id) => `${id.trim().toLowerCase()}@fr.cube`;
+
+        window.processLogin = async () => {
             const id = document.getElementById('login-id').value;
             const pass = document.getElementById('login-pass').value;
-            const status = document.getElementById('login-status');
+            if(!id || !pass) return showToast("請完整填寫欄位", "#ff4444");
             
-            if(!id || !pass) { status.innerText = "請輸入完整資訊"; return; }
-
             try {
-                await signInWithEmailAndPassword(auth, formatID(id), pass);
+                await signInWithEmailAndPassword(auth, getEmailFromID(id), pass);
             } catch (e) {
-                status.innerText = "ID 或密碼錯誤，或該 ID 尚未註冊";
+                showToast("登入失敗：ID或密碼不正確", "#ff4444");
             }
         };
 
-        // ID 註冊
-        window.handleSignUp = async () => {
+        window.processRegister = async () => {
             const id = document.getElementById('reg-id').value;
             const pass = document.getElementById('reg-pass').value;
-            const status = document.getElementById('reg-status');
-
-            if(id.length < 3) { status.innerText = "ID 長度太短"; return; }
-            if(pass.length < 6) { status.innerText = "密碼至少 6 位"; return; }
+            if(id.length < 3 || pass.length < 6) return showToast("ID需3位以上，密碼需6位以上", "#ff4444");
 
             try {
-                const res = await createUserWithEmailAndPassword(auth, formatID(id), pass);
-                await setDoc(doc(db, "users", res.user.uid), {
+                const res = await createUserWithEmailAndPassword(auth, getEmailFromID(id), pass);
+                const initData = {
                     playerID: id,
                     gold: 0,
-                    keys: 20,
+                    keys: 10,
+                    highScore: 0,
+                    playCount: 0,
                     skins: ['classic'],
-                    currentSkin: 'classic'
-                });
+                    currentSkin: 'classic',
+                    createdAt: new Date()
+                };
+                await setDoc(doc(db, "users", res.user.uid), initData);
+                showToast("註冊成功！", "#00ff88");
             } catch (e) {
-                if(e.code === 'auth/email-already-in-use') status.innerText = "此 ID 已被佔用";
-                else status.innerText = "註冊失敗，請換個 ID 試試";
+                showToast("ID 已被佔用或註冊失敗", "#ff4444");
             }
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const snap = await getDoc(doc(db, "users", user.uid));
-                const data = snap.data();
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('display-id').innerText = data.playerID;
-                document.getElementById('gold-val').innerText = data.gold;
-                // 此處接續你的 initGame()...
+                if (snap.exists()) {
+                    userData = snap.data();
+                    document.getElementById('auth-screen').classList.add('hidden');
+                    document.getElementById('game-hud').classList.remove('hidden');
+                    document.getElementById('display-id').innerText = `AGENT: ${userData.playerID}`;
+                    renderShop();
+                    updateHUD();
+                    initEngine();
+                }
             }
         });
+
+        // --- 商城邏輯 ---
+
+        function renderShop() {
+            const list = document.getElementById('skin-list');
+            list.innerHTML = "";
+            SKINS.forEach(skin => {
+                const isOwned = userData.skins.includes(skin.id);
+                const card = document.createElement('div');
+                card.className = "skin-card";
+                card.innerHTML = `
+                    <div class="skin-info">
+                        <div style="color:${'#'+skin.color.toString(16).padStart(6,'0')}">${skin.name}</div>
+                        <div class="skin-price">${isOwned ? '已擁有' : skin.price + ' 💰'}</div>
+                    </div>
+                    ${userData.currentSkin === skin.id ? '✅' : ''}
+                `;
+                card.onclick = () => handleSkinPurchase(skin);
+                list.appendChild(card);
+            });
+        }
+
+        async function handleSkinPurchase(skin) {
+            if (userData.skins.includes(skin.id)) {
+                // 切換皮膚
+                await updateDoc(doc(db, "users", auth.currentUser.uid), { currentSkin: skin.id });
+                userData.currentSkin = skin.id;
+                player.material.color.setHex(skin.color);
+                player.material.emissive.setHex(skin.color);
+                showToast(`切換至 ${skin.name}`);
+            } else {
+                // 購買皮膚
+                if (userData.gold >= skin.price) {
+                    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                        gold: increment(-skin.price),
+                        skins: arrayUnion(skin.id),
+                        currentSkin: skin.id
+                    });
+                    userData.gold -= skin.price;
+                    userData.skins.push(skin.id);
+                    userData.currentSkin = skin.id;
+                    player.material.color.setHex(skin.color);
+                    showToast(`購買成功！已裝備 ${skin.name}`);
+                } else {
+                    showToast("金幣不足！", "#ff4444");
+                }
+            }
+            renderShop();
+            updateHUD();
+        }
+
+        window.toggleShop = () => {
+            const win = document.getElementById('shop-window');
+            const isOpen = win.style.display === 'block';
+            win.style.display = isOpen ? 'none' : 'block';
+            isGameRunning = isOpen; // 關閉商店時恢復遊戲
+        };
+
+        // --- 遊戲引擎核心 (Three.js) ---
+
+        function updateHUD() {
+            document.getElementById('val-score').innerText = score;
+            document.getElementById('val-gold').innerText = (userData?.gold || 0) + sessionGold;
+            document.getElementById('val-keys').innerText = userData?.keys || 0;
+        }
+
+        function initEngine() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x000000, 10, 80);
+            
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // 建立玩家 Cube
+            const skinData = SKINS.find(s => s.id === userData.currentSkin);
+            const geo = new THREE.BoxGeometry(1, 1, 1);
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: skinData.color, 
+                emissive: skinData.color,
+                emissiveIntensity: 0.5 
+            });
+            player = new THREE.Mesh(geo, mat);
+            player.position.y = 0.5;
+            scene.add(player);
+
+            // 建立地板
+            const floorGeo = new THREE.PlaneGeometry(10, 200);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI/2;
+            scene.add(floor);
+
+            // 網格線條 (賽博龐克風格)
+            const grid = new THREE.GridHelper(200, 40, 0x00ff88, 0x222222);
+            grid.position.y = 0.05;
+            scene.add(grid);
+
+            // 光源
+            const pLight = new THREE.PointLight(0x00e5ff, 2, 50);
+            pLight.position.set(0, 5, 0);
+            scene.add(pLight, new THREE.AmbientLight(0x444444));
+
+            camera.position.set(0, 5, 8);
+            camera.lookAt(0, 0, -5);
+
+            clock = new THREE.Clock();
+            
+            // 操作監聽
+            window.addEventListener('touchstart', handleInput);
+            window.addEventListener('mousedown', handleInput);
+            window.addEventListener('resize', onWindowResize);
+
+            isGameRunning = true;
+            animate();
+        }
+
+        function handleInput(e) {
+            if(!isGameRunning) return;
+            const x = e.touches ? e.touches[0].clientX : e.clientX;
+            if(x < window.innerWidth / 2) {
+                if(currentLane > 0) currentLane--;
+            } else {
+                if(currentLane < 2) currentLane++;
+            }
+            moveTargetX = lanePos[currentLane];
+        }
+
+        function spawnEntity() {
+            const lane = lanePos[Math.floor(Math.random()*3)];
+            if(Math.random() > 0.3) {
+                // 障礙物
+                const obsGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                const obsMat = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0xff0000 });
+                const obs = new THREE.Mesh(obsGeo, obsMat);
+                obs.position.set(lane, 0.75, -100);
+                scene.add(obs);
+                obstacles.push(obs);
+            } else {
+                // 金幣
+                const coinGeo = new THREE.TorusGeometry(0.4, 0.1, 16, 32);
+                const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xaa8800 });
+                const coin = new THREE.Mesh(coinGeo, coinMat);
+                coin.position.set(lane, 0.5, -100);
+                scene.add(coin);
+                coins.push(coin);
+            }
+        }
+
+        function animate() {
+            if(!isGameRunning) return;
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            difficultyTimer += delta;
+            speed = 0.6 + (difficultyTimer * 0.005);
+
+            // 平滑移動玩家
+            player.position.x = THREE.MathUtils.lerp(player.position.x, moveTargetX, 0.15);
+            player.rotation.z = -(player.position.x - moveTargetX) * 0.5;
+
+            // 處理障礙物與金幣
+            [...obstacles].forEach((o, i) => {
+                o.position.z += speed;
+                if(o.position.z > 10) {
+                    scene.remove(o);
+                    obstacles.splice(i, 1);
+                    score += 10;
+                    updateHUD();
+                }
+                // 碰撞檢測
+                if(player.position.distanceTo(o.position) < 1.2) gameOver();
+            });
+
+            [...coins].forEach((c, i) => {
+                c.position.z += speed;
+                c.rotation.y += 0.1;
+                if(player.position.distanceTo(c.position) < 1.0) {
+                    scene.remove(c);
+                    coins.splice(i, 1);
+                    sessionGold += 50;
+                    updateHUD();
+                }
+                if(c.position.z > 10) {
+                    scene.remove(c);
+                    coins.splice(i, 1);
+                }
+            });
+
+            if(Math.random() < 0.04) spawnEntity();
+
+            renderer.render(scene, camera);
+        }
+
+        async function gameOver() {
+            isGameRunning = false;
+            const finalScore = score;
+            const gainedGold = sessionGold;
+            
+            showToast(`遊戲結束！獲得金幣: ${gainedGold}`, "#ff4444");
+
+            // 同步至 Firebase
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, {
+                gold: increment(gainedGold),
+                playCount: increment(1),
+                highScore: finalScore > userData.highScore ? finalScore : userData.highScore
+            });
+
+            setTimeout(() => location.reload(), 2000);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
     </script>
 </body>
 </html>
