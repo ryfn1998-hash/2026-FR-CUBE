@@ -16,7 +16,6 @@
         .skin-card { aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 2px solid #444; transition: 0.2s; }
         .btn-pause { position: absolute; top: 20px; right: 20px; width: 50px; height: 50px; background: rgba(138,43,226,0.3); border: 2px solid var(--neon); color: white; border-radius: 50%; z-index: 1000; cursor: pointer; display: none; font-size: 20px; border: 2px solid var(--neon); }
         
-        /* 加速按鈕：增加 active-boost 樣式來顯示開關狀態 */
         #boost-btn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 140px; height: 50px; background: rgba(0, 255, 255, 0.1); border: 2px solid var(--neon-alt); color: var(--neon-alt); border-radius: 8px; z-index: 1000; cursor: pointer; display: none; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; }
         #boost-btn.active-boost { background: var(--neon-alt); color: black; box-shadow: 0 0 20px var(--neon-alt); }
 
@@ -53,13 +52,12 @@
     <div class="score-ui" id="ui-score">0</div>
     <button class="btn-pause" id="pause-btn" onclick="pauseGame()">||</button>
     
-    <!-- 加速按鈕 -->
     <button id="boost-btn">快速速度：OFF</button>
 
     <script>
         let scene, camera, renderer, player, animID;
         let isPlaying = false, isPaused = false, isTransitioning = false, hasWon = false;
-        let isBoosting = false; // 此處改為開關狀態
+        let isBoosting = false; 
         let score = 0, currentSpeed = 0.5, baseSpeed = 0.5;
         let lane = 0, lanes = [-2.2, 0, 2.2];
         let obstacles = [], particles = [], sideLines = [];
@@ -107,7 +105,7 @@
             const toggleBoost = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                isBoosting = !isBoosting; // 切換狀態
+                isBoosting = !isBoosting; 
                 
                 if(isBoosting) {
                     bBtn.classList.add('active-boost');
@@ -118,25 +116,37 @@
                 }
             };
             
-            // 使用 click/touchstart 以符合開關操作
             bBtn.addEventListener('touchstart', toggleBoost);
             bBtn.addEventListener('mousedown', toggleBoost);
 
-            window.addEventListener('touchstart', e => {
+            // --- 統一操控邏輯 (滑鼠點擊 + 螢幕觸控) ---
+            const handleInput = (clientX, clientY) => {
                 if(!isPlaying || isPaused) return;
-                const tx = e.touches[0].clientX;
-                const ty = e.touches[0].clientY;
-                // 增加點擊範圍保護，避免誤觸加速按鈕區
-                if (ty > window.innerHeight - 100 && tx > window.innerWidth/4 && tx < (window.innerWidth*3)/4) return;
-                if (tx > window.innerWidth - 85 && ty < 85) return; 
 
-                lane = tx < window.innerWidth / 2 ? Math.max(-1, lane - 1) : Math.min(1, lane + 1);
+                // 排除 UI 按鈕區域 (暫停按鈕與加速按鈕)
+                if (clientY < 85 && clientX > window.innerWidth - 85) return; 
+                if (clientY > window.innerHeight - 100 && clientX > window.innerWidth/4 && clientX < (window.innerWidth*3)/4) return;
+
+                if (clientX < window.innerWidth / 2) {
+                    lane = Math.max(-1, lane - 1);
+                } else {
+                    lane = Math.min(1, lane + 1);
+                }
+            };
+
+            window.addEventListener('touchstart', e => handleInput(e.touches[0].clientX, e.touches[0].clientY));
+            window.addEventListener('mousedown', e => {
+                if (e.button === 0) handleInput(e.clientX, e.clientY); // 只偵測左鍵
             });
             
+            // --- 鍵盤控制支援 (A, D, 左, 右) ---
             window.addEventListener('keydown', e => {
-                if(e.key === "ArrowLeft") lane = Math.max(-1, lane - 1);
-                if(e.key === "ArrowRight") lane = Math.min(1, lane + 1);
+                if(!isPlaying || isPaused) return;
+                const key = e.key.toLowerCase();
+                if(key === "arrowleft" || key === "a") lane = Math.max(-1, lane - 1);
+                if(key === "arrowright" || key === "d") lane = Math.min(1, lane + 1);
             });
+
             loop();
         }
 
@@ -146,7 +156,6 @@
 
             let normalSpeed = score < 250 ? baseSpeed + (score * 0.005) : baseSpeed + (250 * 0.005);
             
-            // 如果開關開啟且分數低於 50，使用固定加速
             if (isBoosting && score < 50) {
                 currentSpeed = baseSpeed + (50 * 0.005);
             } else {
@@ -158,7 +167,7 @@
                 bBtn.style.display = 'block';
             } else {
                 bBtn.style.display = 'none';
-                isBoosting = false; // 分數到了自動關閉
+                isBoosting = false; 
             }
 
             if (score >= 6700 && !hasWon) {
